@@ -8,7 +8,7 @@
 #ifndef WebEngageConstants_h
 #define WebEngageConstants_h
 
-#define WEBENGAGE_PLUGIN  @"webengage_flutter"
+#define WEBENGAGE_PLUGIN  @"com.webengage_flutter/channel"
 
 #define METHOD_NAME_INITIALISE  @"initialise"
 #define METHOD_NAME_GET_PLATFORM_VERSION @"getPlatformVersion"
