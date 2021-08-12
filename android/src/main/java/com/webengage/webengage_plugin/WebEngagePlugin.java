@@ -406,6 +406,11 @@ public class WebEngagePlugin implements FlutterPlugin, MethodCallHandler, Activi
         final Map<String, Object> messagePayload = new HashMap<>();
         messagePayload.put(PARAM_PLATFORM, PARAM_PLATFORM_VALUE);
         messagePayload.put(PARAM_PAYLOAD, message);
+
+        final Map<String, Object> eventPayload = new HashMap<>();
+        eventPayload.put("key", methodName);
+        eventPayload.put("value", messagePayload);
+
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
