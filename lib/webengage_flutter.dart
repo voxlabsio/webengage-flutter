@@ -12,16 +12,24 @@ typedef void MessageHandlerInAppClick(Map<String, dynamic>? message, String? s);
 typedef void MessageHandlerPushClick(Map<String, dynamic>? message, String? s);
 
 class WebEngagePlugin {
-  static const MethodChannel _channel =
-      const MethodChannel('webengage_flutter');
-  static final WebEngagePlugin _webengagePlugin =
-      new WebEngagePlugin._internal();
+  static const _channel = const MethodChannel('com.webengage_flutter/channel');
+  static const _events = const EventChannel('com.webengage_flutter/events');
+  static final _webengagePlugin = new WebEngagePlugin._internal();
 
   factory WebEngagePlugin() => _webengagePlugin;
 
   WebEngagePlugin._internal() {
     _channel.setMethodCallHandler(_platformCallHandler);
     _channel.invokeMethod(methodInitialise);
+    if (Platform.isAndroid) {
+      _events.receiveBroadcastStream().listen((event) {
+        if (event == null) return;
+        final key = event['key'];
+        final value = event['value'];
+        if (value == null || key == null) return;
+        _platformCallHandler(MethodCall(key, value));
+      });
+    }
   }
 
   MessageHandlerPushClick? _onPushClick;
@@ -42,10 +50,11 @@ class WebEngagePlugin {
   Sink get pushSink {
     return _pushClickStream.sink;
   }
+
   //Push Action click
   // ignore: close_sinks
   final StreamController<PushPayload> _pushActionClickStream =
-  new StreamController<PushPayload>();
+      new StreamController<PushPayload>();
 
   Stream<PushPayload> get pushActionStream {
     return _pushActionClickStream.stream;
@@ -57,7 +66,7 @@ class WebEngagePlugin {
 
   //
   final StreamController<String?> _trackDeeplinkURLStream =
-  new StreamController<String?>();
+      new StreamController<String?>();
 
   Stream<String?> get trackDeeplinkStream {
     return _trackDeeplinkURLStream.stream;
@@ -66,12 +75,14 @@ class WebEngagePlugin {
   Sink get trackDeeplinkURLStreamSink {
     return _trackDeeplinkURLStream.sink;
   }
+
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
 
-  @Deprecated("Use '_pushClickStream' & 'pushActionStream' instead. This method will be removed in future build.")
+  @Deprecated(
+      "Use '_pushClickStream' & 'pushActionStream' instead. This method will be removed in future build.")
   void setUpPushCallbacks(MessageHandlerPushClick onPushClick,
       MessageHandlerPushClick onPushActionClick) {
     _onPushClick = onPushClick;
@@ -173,7 +184,8 @@ class WebEngagePlugin {
 
   Future _platformCallHandler(MethodCall call) async {
     print("_platformCallHandler call ${call.method} ${call.arguments}");
-    if (call.method == callbackOnPushClick || call.method == callbackOnPushActionClick) {
+    if (call.method == callbackOnPushClick ||
+        call.method == callbackOnPushActionClick) {
       Map<String, dynamic>? message = call.arguments.cast<String, dynamic>();
       if (Platform.isAndroid) {
         String? deepLink = message![PAYLOAD][URI];
@@ -219,7 +231,8 @@ class WebEngagePlugin {
         _onInAppClick!(newPayload, selectedActionId);
       } else {
         String? selectedActionId = message![SELECTED_ACTION_ID];
-        _onInAppClick!(call.arguments.cast<String, dynamic>(), selectedActionId);
+        _onInAppClick!(
+            call.arguments.cast<String, dynamic>(), selectedActionId);
       }
     }
 

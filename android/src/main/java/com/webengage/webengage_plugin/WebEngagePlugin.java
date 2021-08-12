@@ -38,13 +38,15 @@ import static com.webengage.webengage_plugin.Constants.ARGS.*;
 import static com.webengage.webengage_plugin.Constants.MethodName.*;
 import static com.webengage.webengage_plugin.Constants.PARAM.*;
 import static com.webengage.webengage_plugin.Constants.WEBENGAGE_PLUGIN;
-
+import static com.webengage.webengage_plugin.Constants.WEBENGAGE_EVENTS;
 
 public class WebEngagePlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
     private static final String TAG = "WebEngagePlugin";
 
     private static MethodChannel channel;
     private Context context;
+    private static EventChannel eventChannel;
+    private static EventChannel.EventSink eventSink;
     Activity activity;
     private static boolean isInitialised;
     private static final Map<String, Map<String, Object>> messageQueue =
@@ -53,9 +55,20 @@ public class WebEngagePlugin implements FlutterPlugin, MethodCallHandler, Activi
     @Override
     public void onAttachedToEngine(FlutterPluginBinding flutterPluginBinding) {
         Log.w(TAG, "onAttachedToEngine on thread: " + Thread.currentThread().getName());
+        this.context = flutterPluginBinding.getApplicationContext();
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), WEBENGAGE_PLUGIN);
         channel.setMethodCallHandler(this);
-        this.context = flutterPluginBinding.getApplicationContext();
+        eventChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), WEBENGAGE_EVENTS);
+        eventChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object listener, EventChannel.EventSink sink) {
+                eventSink = sink;
+            }
+            @Override
+            public void onCancel(Object listener) {
+                eventSink.endOfStream();
+            }
+        });
     }
 
     @Override
@@ -395,6 +408,7 @@ public class WebEngagePlugin implements FlutterPlugin, MethodCallHandler, Activi
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
+                eventSink.success(eventPayload);
                 channel.invokeMethod(methodName, messagePayload);
             }
         });
