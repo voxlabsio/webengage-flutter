@@ -414,7 +414,9 @@ public class WebEngagePlugin implements FlutterPlugin, MethodCallHandler, Activi
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                eventSink.success(eventPayload);
+                if (eventSink != null) {
+                    eventSink.success(eventPayload);
+                }
                 channel.invokeMethod(methodName, messagePayload);
             }
         });
